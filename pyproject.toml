@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "viz-manga"
-version = "0.1.0"
+version = "0.1.1"
 description = "Viz Manga Reader"
 authors = ["Kevin Ramdath <krpent@gmail.com>"]
 repository = "https://github.com/minormending/viz-manga"

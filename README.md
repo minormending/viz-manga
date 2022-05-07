@@ -1,6 +1,8 @@
 # Viz Manga Viewer
 Retrieves and unobfuscates manga pages for an input chapter id. Manga pages can be saves the dual spread images as well as single page images. Chapter ids need to be retrieved from the Viz site by looking at the chapter url.
 
+DISCLAIMER: I am not licensed or affiliated with Viz Media and this repository is meant for informational purposes only. Please delete the retrieved pages after reading.
+
 # Installation
 ```
 pip install viz_manga
