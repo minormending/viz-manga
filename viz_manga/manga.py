@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from importlib.metadata import metadata
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 from requests import Response, Session
 from viz_image_unobfuscate import unobfuscate_image
 from PIL import Image
@@ -10,6 +11,14 @@ from PIL import Image
 class Manifest:
     metadata_url: str
     pages: Dict[str, str]
+
+@dataclass
+class Metadata:
+    title: str
+    width: int
+    height: int
+    spreads: List[int]
+    pages: List[Any] # seems to always be empty
 
 
 class VizManga:
@@ -32,9 +41,9 @@ class VizManga:
         payload: Dict[str, Any] = resp.json()
         return Manifest(payload.get("metadata"), payload.get("data"))
 
-    def _get_metadata(self, manifest: Manifest) -> Dict:
+    def _get_metadata(self, manifest: Manifest) -> Metadata:
         resp: Response = self.session.get(manifest.metadata_url)
-        return resp.json()
+        return Metadata(**resp.json())
 
     def _get_page_image(self, url: str) -> Image:
         resp: Response = self.session.get(url, stream=True)
@@ -50,16 +59,48 @@ class VizManga:
 
         return image
 
-    def _save_pages(self, manifest: Manifest, directory: str) -> None:
+    def _save_pages(self, manifest: Manifest, directory: str) -> List[str]:
+        page_names: List[str] = []
         for page_num, url in manifest.pages.items():
-            filename = os.path.join(directory, f"page{page_num}.jpg")
+            filename = os.path.join(directory, f"page{int(page_num):02d}.jpg")
             image: Image = self._get_page_image(url)
             image.save(filename)
+            page_names.append(filename)
+        return page_names
 
-    def save_chapter(self, chapter_id: int, directory: str) -> None:
+    def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> None:
         manifest: Manifest = self._get_manifest(chapter_id)
-        # resp = self._get_metadata(manifest)
-        self._save_pages(manifest, directory)
+        # needs to be done immediated b/c url only signed for 1 sec from when it leaves the Viz server.
+        metadata = self._get_metadata(manifest)
+        # each page url is signed for 1 second longer than the previous page.
+        page_names: List[str] = self._save_pages(manifest, directory)
+
+        
+        if combine:
+            pages_combine: List[int] = list(range(0, len(page_names), 2)) # all pages
+        elif metadata.spreads:
+            pages_combine: List[int] = metadata.spreads
+        
+        for idx_right in pages_combine:
+            filename_left: str = page_names[idx_right + 1]
+            filename_right: str = page_names[idx_right]
+            filename: str = os.path.join(directory, f"page{idx_right:02d}_{idx_right + 1:02d}.jpg")
+            combined_image: Image = self._combine_pages(filename_left, filename_right)
+            combined_image.save(filename)
+
+            os.remove(filename_left)
+            os.remove(filename_right)
+
+
+    def _combine_pages(self, page_left: str, page_right: str) -> Image:
+        image_left: Image = Image.open(page_left)
+        image_right: Image = Image.open(page_right)
+
+        size: Tuple[int, int] = (image_left.width + image_right.width, max(image_left.height, image_right.height))
+        combined_image: Image = Image.new("RGB", size, "white")
+        combined_image.paste(image_left, (0, 0))
+        combined_image.paste(image_right, (image_left.width, 0))
+        return combined_image
 
 
 if __name__ == "__main__":
@@ -76,9 +117,14 @@ if __name__ == "__main__":
         default=".",
         help="Output directory to save the unobfuscated pages.",
     )
+    parser.add_argument(
+        "--combine",
+        action='store_true',
+        help="Combine left and right pages and spreads into 1 image.",
+    )
 
     args = parser.parse_args()
 
     chapter_id = 24297
     viz = VizManga()
-    viz.save_chapter(args.chapter_id, args.directory)
+    viz.save_chapter(args.chapter_id, args.directory, args.combine)
