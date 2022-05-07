@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 from typing import Any, Dict, List, Tuple
 from requests import Response, Session
 from PIL import Image
@@ -66,10 +67,19 @@ class VizManga:
             page_names.append(filename)
         return page_names
 
-    def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> None:
+    def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> bool:
         manifest: Manifest = self._get_manifest(chapter_id)
+        if not manifest or not manifest.metadata_url or not manifest.pages:
+            logging.error(f"Did not find a metadata url or any pages for chapter {chapter_id}, exiting...")
+            return False
+
         # needs to be done immediated b/c url only signed for 1 sec from when it leaves the Viz server.
         metadata = self._get_metadata(manifest)
+        if not metadata:
+            logging.error(f"Could not get metadata for chapter {chapter_id} with {len(manifest.pages)} pages, exiting...")
+            return False
+
+        logging.info(f"Getting {len(manifest.pages)} pages for {metadata.title}")
         # each page url is signed for 1 second longer than the previous page.
         page_names: List[str] = self._save_pages(manifest, directory)
 
@@ -89,6 +99,7 @@ class VizManga:
 
             os.remove(filename_left)
             os.remove(filename_right)
+        return True
 
     def _combine_pages(self, page_left: str, page_right: str) -> Image:
         image_left: Image = Image.open(page_left)
@@ -121,9 +132,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--combine",
         action="store_true",
-        help="Combine left and right pages and spreads into 1 image.",
+        help="Combine left and right pages into one image.",
     )
 
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
     viz = VizManga()
-    viz.save_chapter(args.chapter_id, args.directory, args.combine)
+    if viz.save_chapter(args.chapter_id, args.directory, args.combine):
+        print(f"Successfully retrieved chapter {args.chapter_id}")
+    else:
+        print(f"Failed to retrieve chapter {args.chapter_id}")
