@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 from typing import Any, Dict, List, Tuple
 from requests import Response, Session
@@ -18,8 +18,14 @@ class Metadata:
     title: str
     width: int
     height: int
-    spreads: List[int]
     pages: List[Any]  # seems to always be empty
+
+    spreads: List[int] = field(default_factory=lambda: list())
+    
+    # only some series chapters have these
+    hdwidth: int = -1
+    hdheight: int = -1
+
 
 
 class VizManga:
@@ -58,10 +64,10 @@ class VizManga:
 
         return image
 
-    def _save_pages(self, manifest: Manifest, directory: str) -> List[str]:
+    def _save_pages(self, chapter_id: int, manifest: Manifest, directory: str) -> List[str]:
         page_names: List[str] = []
         for page_num, url in manifest.pages.items():
-            filename = os.path.join(directory, f"page{int(page_num):02d}.jpg")
+            filename = os.path.join(directory, f"{chapter_id}_page{int(page_num):02d}.jpg")
             image: Image = self._get_page_image(url)
             image.save(filename)
             page_names.append(filename)
@@ -81,7 +87,7 @@ class VizManga:
 
         logging.info(f"Getting {len(manifest.pages)} pages for {metadata.title}")
         # each page url is signed for 1 second longer than the previous page.
-        page_names: List[str] = self._save_pages(manifest, directory)
+        page_names: List[str] = self._save_pages(chapter_id, manifest, directory)
 
         if combine:
             pages_combine: List[int] = list(range(0, len(page_names), 2))  # all pages
@@ -92,7 +98,7 @@ class VizManga:
             filename_left: str = page_names[idx_right + 1]
             filename_right: str = page_names[idx_right]
             filename: str = os.path.join(
-                directory, f"page{idx_right:02d}_{idx_right + 1:02d}.jpg"
+                directory, f"{chapter_id}_page{idx_right:02d}_{idx_right + 1:02d}.jpg"
             )
             combined_image: Image = self._combine_pages(filename_left, filename_right)
             combined_image.save(filename)
