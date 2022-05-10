@@ -28,12 +28,14 @@ class Metadata:
 
 
 
-class VizManga:
+class VizMangaFetch:
     def __init__(self) -> None:
         self.session = Session()
         self.session.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36"
         }
+        self.session.proxies = {"http": "127.0.0.1:8888", "https": "127.0.0.1:8888"}
+        self.session.verify = False
 
     def _get_manifest(self, chapter_id: int) -> Manifest:
         # if we ask for more pages than are in the chapter, the endpoint will return the max pages
@@ -143,7 +145,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    viz = VizManga()
+    viz = VizMangaFetch()
     if viz.save_chapter(args.chapter_id, args.directory, args.combine):
         print(f"Successfully retrieved chapter {args.chapter_id}")
     else:

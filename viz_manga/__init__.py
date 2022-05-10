@@ -1,3 +1,3 @@
 __version__ = '0.1.0'
 
-from .manga import VizManga
+from .manga_fetch import VizMangaFetch
