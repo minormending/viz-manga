@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from requests import Session
+from requests import Response, Session
 
 
 class VizMangaDetails:
