@@ -21,11 +21,10 @@ class Metadata:
     pages: List[Any]  # seems to always be empty
 
     spreads: List[int] = field(default_factory=lambda: list())
-    
+
     # only some series chapters have these
     hdwidth: int = -1
     hdheight: int = -1
-
 
 
 class VizMangaFetch:
@@ -66,10 +65,14 @@ class VizMangaFetch:
 
         return image
 
-    def _save_pages(self, chapter_id: int, manifest: Manifest, directory: str) -> List[str]:
+    def _save_pages(
+        self, chapter_id: int, manifest: Manifest, directory: str
+    ) -> List[str]:
         page_names: List[str] = []
         for page_num, url in manifest.pages.items():
-            filename = os.path.join(directory, f"{chapter_id}_page{int(page_num):02d}.jpg")
+            filename = os.path.join(
+                directory, f"{chapter_id}_page{int(page_num):02d}.jpg"
+            )
             image: Image = self._get_page_image(url)
             image.save(filename)
             page_names.append(filename)
@@ -78,13 +81,17 @@ class VizMangaFetch:
     def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> bool:
         manifest: Manifest = self._get_manifest(chapter_id)
         if not manifest or not manifest.metadata_url or not manifest.pages:
-            logging.error(f"Did not find a metadata url or any pages for chapter {chapter_id}, exiting...")
+            logging.error(
+                f"Did not find a metadata url or any pages for chapter {chapter_id}, exiting..."
+            )
             return False
 
         # needs to be done immediated b/c url only signed for 1 sec from when it leaves the Viz server.
         metadata = self._get_metadata(manifest)
         if not metadata:
-            logging.error(f"Could not get metadata for chapter {chapter_id} with {len(manifest.pages)} pages, exiting...")
+            logging.error(
+                f"Could not get metadata for chapter {chapter_id} with {len(manifest.pages)} pages, exiting..."
+            )
             return False
 
         logging.info(f"Getting {len(manifest.pages)} pages for {metadata.title}")
