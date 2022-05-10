@@ -16,10 +16,18 @@ class VizMangaDetails:
 
         soup: BeautifulSoup = BeautifulSoup(resp.text, "html.parser")
         series_section: Tag = soup.find(class_="section_chapters")
-        series_table: Tag = series_section.find("div", {"class":"property-row"})
-        series_tags: ResultSet = series_table.find_all(href=re.compile("/shonenjump/chapters/"), class_="o_chapters-link")
-        for series_tag in series_tags[0:3]:
-            print(series_tag)
+        series_table: Tag = series_section.find("div", {"class": "property-row"})
+
+        series_link_pattern: str = "/shonenjump/chapters/"
+        series_tags: ResultSet = series_table.find_all(
+            href=re.compile(series_link_pattern), class_="o_chapters-link"
+        )
+        for series_tag in series_tags[:]:
+            #print(series_tag)
+            link: str = series_tag["href"]
+            series_slug: str = link.replace(series_link_pattern, "").strip()
+            series_name = series_tag.find_all("div", class_="type-center")[-1].text.strip()
+            print(f"{series_slug}: {series_name}")
 
 
 if __name__ == "__main__":
