@@ -38,7 +38,7 @@ class VizMangaFetch:
 
     def _get_manifest(self, chapter_id: int) -> Manifest:
         # if we ask for more pages than are in the chapter, the endpoint will return the max pages
-        pages: str = ",".join([str(i) for i in range(25)])
+        pages: str = ",".join([str(i) for i in range(100)])
         url: str = f"https://www.viz.com/manga/get_manga_url?device_id=3&manga_id={chapter_id}&pages={pages}"
         headers: Dict[str, str] = {
             "Referer": "https://www.viz.com/shonenjump/?action=read",
@@ -104,6 +104,8 @@ class VizMangaFetch:
             pages_combine: List[int] = metadata.spreads
 
         for idx_right in pages_combine:
+            if len(page_names) <= idx_right + 1:
+                continue
             filename_left: str = page_names[idx_right + 1]
             filename_right: str = page_names[idx_right]
             filename: str = os.path.join(
