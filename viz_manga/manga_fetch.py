@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 from typing import Any, Dict, List, Tuple
 from requests import Response, Session
@@ -18,11 +18,16 @@ class Metadata:
     title: str
     width: int
     height: int
-    spreads: List[int]
     pages: List[Any]  # seems to always be empty
 
+    spreads: List[int] = field(default_factory=lambda: list())
 
-class VizManga:
+    # only some series chapters have these
+    hdwidth: int = -1
+    hdheight: int = -1
+
+
+class VizMangaFetch:
     def __init__(self) -> None:
         self.session = Session()
         self.session.headers = {
@@ -31,7 +36,7 @@ class VizManga:
 
     def _get_manifest(self, chapter_id: int) -> Manifest:
         # if we ask for more pages than are in the chapter, the endpoint will return the max pages
-        pages: str = ",".join([str(i) for i in range(25)])
+        pages: str = ",".join([str(i) for i in range(100)])
         url: str = f"https://www.viz.com/manga/get_manga_url?device_id=3&manga_id={chapter_id}&pages={pages}"
         headers: Dict[str, str] = {
             "Referer": "https://www.viz.com/shonenjump/?action=read",
@@ -58,10 +63,14 @@ class VizManga:
 
         return image
 
-    def _save_pages(self, manifest: Manifest, directory: str) -> List[str]:
+    def _save_pages(
+        self, chapter_id: int, manifest: Manifest, directory: str
+    ) -> List[str]:
         page_names: List[str] = []
         for page_num, url in manifest.pages.items():
-            filename = os.path.join(directory, f"page{int(page_num):02d}.jpg")
+            filename = os.path.join(
+                directory, f"{chapter_id}_page{int(page_num):02d}.jpg"
+            )
             image: Image = self._get_page_image(url)
             image.save(filename)
             page_names.append(filename)
@@ -70,18 +79,22 @@ class VizManga:
     def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> bool:
         manifest: Manifest = self._get_manifest(chapter_id)
         if not manifest or not manifest.metadata_url or not manifest.pages:
-            logging.error(f"Did not find a metadata url or any pages for chapter {chapter_id}, exiting...")
+            logging.error(
+                f"Did not find a metadata url or any pages for chapter {chapter_id}, exiting..."
+            )
             return False
 
         # needs to be done immediated b/c url only signed for 1 sec from when it leaves the Viz server.
         metadata = self._get_metadata(manifest)
         if not metadata:
-            logging.error(f"Could not get metadata for chapter {chapter_id} with {len(manifest.pages)} pages, exiting...")
+            logging.error(
+                f"Could not get metadata for chapter {chapter_id} with {len(manifest.pages)} pages, exiting..."
+            )
             return False
 
         logging.info(f"Getting {len(manifest.pages)} pages for {metadata.title}")
         # each page url is signed for 1 second longer than the previous page.
-        page_names: List[str] = self._save_pages(manifest, directory)
+        page_names: List[str] = self._save_pages(chapter_id, manifest, directory)
 
         if combine:
             pages_combine: List[int] = list(range(0, len(page_names), 2))  # all pages
@@ -89,10 +102,12 @@ class VizManga:
             pages_combine: List[int] = metadata.spreads
 
         for idx_right in pages_combine:
+            if len(page_names) <= idx_right + 1:
+                continue
             filename_left: str = page_names[idx_right + 1]
             filename_right: str = page_names[idx_right]
             filename: str = os.path.join(
-                directory, f"page{idx_right:02d}_{idx_right + 1:02d}.jpg"
+                directory, f"{chapter_id}_page{idx_right:02d}_{idx_right + 1:02d}.jpg"
             )
             combined_image: Image = self._combine_pages(filename_left, filename_right)
             combined_image.save(filename)
@@ -137,7 +152,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    viz = VizManga()
+    viz = VizMangaFetch()
     if viz.save_chapter(args.chapter_id, args.directory, args.combine):
         print(f"Successfully retrieved chapter {args.chapter_id}")
     else:
