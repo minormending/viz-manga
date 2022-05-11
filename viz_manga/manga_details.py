@@ -102,3 +102,4 @@ if __name__ == "__main__":
             print(manga.__dict__)
     elif args.command == "chapters" and args.series_slug:
         for chapter in details.get_series_chapters(Series(None, args.series_slug)):
+            print(chapter.__dict__)
