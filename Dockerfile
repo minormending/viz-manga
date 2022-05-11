@@ -9,4 +9,4 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-dev
 
 COPY viz_manga /app
-ENTRYPOINT [ "python", "./manga.py" ]
+ENTRYPOINT [ "python", "./manga_fetch.py" ]
