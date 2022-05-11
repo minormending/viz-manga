@@ -33,8 +33,6 @@ class VizMangaFetch:
         self.session.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36"
         }
-        self.session.proxies = {"http": "127.0.0.1:8888", "https": "127.0.0.1:8888"}
-        self.session.verify = False
 
     def _get_manifest(self, chapter_id: int) -> Manifest:
         # if we ask for more pages than are in the chapter, the endpoint will return the max pages
