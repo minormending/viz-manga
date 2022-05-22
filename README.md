@@ -91,28 +91,48 @@ options:
 ## Fetch Chapter
 ```
 >>> viz-manga-cli fetch --help
-usage: viz-manga-cli fetch [-h] [--directory DIRECTORY] [--combine] chapter_id
+usage: viz-manga-cli fetch [-h] [--directory DIRECTORY] slug
 
 positional arguments:
-  chapter_id            Chapter id obtained from the Viz site.
+  slug                  Chapter id or series name obtained from the Viz site.
 
 options:
   -h, --help            show this help message and exit
   --directory DIRECTORY
                         Output directory to save the deobfuscated pages.
-  --combine             Combine left and right pages into one image.
 
->>> viz-manga-cli fetch 15220 --directory images/ --combine
+>>> viz-manga-cli fetch 15220 --directory images/
 
 INFO:root:Getting 79 pages for Root 1: The Demon's Servant
 Successfully retrieved chapter 15220
 
 ```
 
+## Fetch all free chapters from a series
+IMPORTANT: This is for reading purposes only, please delete after reading.
+
+If a series slug is specified for `fetch`, it will try to retrieve all free chapters of the series, placing each chapter into it's own sub-directory. If a directory folder already exists for the chapter, the cli will skip that chapter.
+
+```
+>>> viz-manga-cli fetch one-piece --directory images/
+
+INFO:root:Getting 18 pages for One Piece Chapter 1049.0
+INFO:root:Successfully retrieved chapter ch-1049 at: images/ch-1049
+INFO:root:Getting 18 pages for One Piece Chapter 1048.0
+INFO:root:Successfully retrieved chapter ch-1048 at: images/ch-1048
+INFO:root:Getting 20 pages for One Piece Chapter 1047.0
+INFO:root:Successfully retrieved chapter ch-1047 at: images/ch-1047
+INFO:root:Successfully retrieved chapter ch-3 at: images/ch-3
+INFO:root:Getting 25 pages for Chapter 2: They Call Him “Straw Hat Luffy”
+INFO:root:Successfully retrieved chapter ch-2 at: images/ch-2
+INFO:root:Getting 55 pages for Chapter 1: Romance Dawn
+INFO:root:Successfully retrieved chapter ch-1 at: images/ch-1
+```
+
 # Docker
 ```
 >>> docker build -t viz-manga .
->>> docker run -v /home/user/images/:/app/images viz-manga  fetch 24297 --directory images/ --combine
+>>> docker run -v /home/user/images/:/app/images viz-manga fetch 24297 --directory images/
 
 INFO:root:Getting 20 pages for One Piece Chapter 1047.0
 Successfully retrieved chapter 24297
