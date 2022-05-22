@@ -10,9 +10,9 @@ keywords = ["viz", "manga", "reader"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-viz-image-unobfuscate = "^0.1.1"
 requests = "^2.27.1"
 beautifulsoup4 = "^4.11.1"
+viz-image-deobfuscate = "^0.1.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
