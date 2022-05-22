@@ -1,8 +1,38 @@
 import logging
+import os
 from typing import List
 
 from viz_manga import VizMangaFetch, VizMangaDetails
 from viz_manga.manga_details import Series
+
+
+def get_all_series(series: Series, directory: str) -> None:
+    viz: VizMangaFetch = VizMangaFetch()
+    details: VizMangaDetails = VizMangaDetails()
+    for chapter in details.get_series_chapters(series):
+        if chapter.is_free:
+            chapter_directory: str = os.path.join(
+                directory, chapter.title or chapter.id
+            )
+            if os.path.exists(chapter_directory):
+                logging.warning(
+                    f"Directory {chapter_directory} for chapter {chapter.title} already exists, skipping."
+                )
+            else:
+                os.mkdir(chapter_directory)
+                if os.path.exists(chapter_directory):
+                    if viz.save_chapter(chapter.id, chapter_directory, combine=True):
+                        logging.info(
+                            f"Successfully retrieved chapter {chapter.title} at: {chapter_directory}"
+                        )
+                    else:
+                        logging.warning(
+                            f"Unable to retrieved chapter {chapter.title} and save in {chapter_directory}"
+                        )
+                else:
+                    logging.warning(
+                        f"Unable to create directory {chapter_directory} for chapter {chapter.title}, skipping."
+                    )
 
 
 def main() -> None:
@@ -15,17 +45,12 @@ def main() -> None:
         "fetch", help="Fetches and deobfuscates an entire manga chapter for reading."
     )
     fetch_chapter.add_argument(
-        "chapter_id", type=int, help="Chapter id obtained from the Viz site."
+        "slug", help="Chapter id or series name obtained from the Viz site."
     )
     fetch_chapter.add_argument(
         "--directory",
         default=".",
         help="Output directory to save the deobfuscated pages.",
-    )
-    fetch_chapter.add_argument(
-        "--combine",
-        action="store_true",
-        help="Combine left and right pages into one image.",
     )
 
     series_parser = subparsers.add_parser(
@@ -50,11 +75,17 @@ def main() -> None:
 
     if args.command.lower() == "fetch":
         logging.basicConfig(level=logging.INFO)
-        viz: VizMangaFetch = VizMangaFetch()
-        if viz.save_chapter(args.chapter_id, args.directory, args.combine):
-            print(f"Successfully retrieved chapter {args.chapter_id}")
+
+        if args.slug.isnumeric():
+            chapter_id: int = int(args.slug)
+            viz: VizMangaFetch = VizMangaFetch()
+            if viz.save_chapter(chapter_id, args.directory, combine=True):
+                logging.info(f"Successfully retrieved chapter {chapter_id}")
+            else:
+                logging.error(f"Failed to retrieve chapter {chapter_id}")
         else:
-            print(f"Failed to retrieve chapter {args.chapter_id}")
+            series: Series = Series(None, slug=args.slug)
+            get_all_series(series, args.directory)
     elif args.command.lower() == "series":
         details: VizMangaDetails = VizMangaDetails()
         series: List[Series] = details.get_series()

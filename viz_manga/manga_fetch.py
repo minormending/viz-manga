@@ -76,7 +76,9 @@ class VizMangaFetch:
             page_names.append(filename)
         return page_names
 
-    def save_chapter(self, chapter_id: int, directory: str, combine: bool) -> bool:
+    def save_chapter(
+        self, chapter_id: int, directory: str, combine: bool = True
+    ) -> bool:
         manifest: Manifest = self._get_manifest(chapter_id)
         if not manifest or not manifest.metadata_url or not manifest.pages:
             logging.error(
