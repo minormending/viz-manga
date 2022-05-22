@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import re
 from typing import List
-from bs4 import BeautifulSoup, ResultSet, Tag
+from bs4 import BeautifulSoup, ResultSet
 from requests import Response, Session
+
 
 @dataclass
 class Series:
@@ -74,32 +75,3 @@ class VizMangaDetails:
             is_free: bool = "join to read" not in chapter_tag.get("href", "").lower()
             chapters.append(Chapter(name, chapter_id, link, is_free))
         return chapters
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Lookup Viz managa information.")
-    subparsers = parser.add_subparsers(dest="command")
-    series_parser = subparsers.add_parser(
-        "series",
-        help="Get series title and slug (for chapter lookup) obtained from the Viz site.",
-    )
-    chapter_parser = subparsers.add_parser(
-        "chapters", help="Get chapter title and id obtained from the Viz site."
-    )
-    chapter_parser.add_argument(
-        "series_slug",
-        help="Series title for which to lookup chapter ids from the Viz site.",
-    )
-
-    args = parser.parse_args()
-
-    details = VizMangaDetails()
-    if args.command == "series":
-        series: List[Series] = details.get_series()
-        for manga in series:
-            print(manga.__dict__)
-    elif args.command == "chapters" and args.series_slug:
-        for chapter in details.get_series_chapters(Series(None, args.series_slug)):
-            print(chapter.__dict__)

@@ -1,12 +1,14 @@
-FROM python:3.10
-
-RUN mkdir /app
-COPY pyproject.toml /app 
-WORKDIR /app
+FROM python:3.10-slim
 
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
+
+RUN mkdir -p /app/viz_manga
+COPY pyproject.toml /app
+COPY README.md /app
+COPY viz_manga /app/viz_manga
+
+WORKDIR /app
 RUN poetry install --no-dev
 
-COPY viz_manga /app
-ENTRYPOINT [ "python", "./manga_fetch.py" ]
+ENTRYPOINT [ "viz-manga-cli" ]

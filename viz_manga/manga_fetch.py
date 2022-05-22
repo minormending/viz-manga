@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Tuple
 from requests import Response, Session
 from PIL import Image
-from viz_image_unobfuscate import unobfuscate_image
+from viz_image_deobfuscate import deobfuscate_image
 import os
 
 
@@ -57,7 +57,7 @@ class VizMangaFetch:
             for chunk in resp:
                 file_handle.write(chunk)
 
-        image: Image = unobfuscate_image(tmp_filename)
+        image: Image = deobfuscate_image(tmp_filename)
 
         os.remove(tmp_filename)  # remove temporary image
 
@@ -84,7 +84,7 @@ class VizMangaFetch:
             )
             return False
 
-        # needs to be done immediated b/c url only signed for 1 sec from when it leaves the Viz server.
+        # needs to be done immediately b/c url only signed for 1 sec from when it leaves the Viz server.
         metadata = self._get_metadata(manifest)
         if not metadata:
             logging.error(
@@ -128,32 +128,3 @@ class VizMangaFetch:
         combined_image.paste(image_left, (0, 0))
         combined_image.paste(image_right, (image_left.width, 0))
         return combined_image
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Unobfuscates an entire manga chapter for reading."
-    )
-    parser.add_argument(
-        "chapter_id", type=int, help="Chapter id obtained from the Viz site."
-    )
-    parser.add_argument(
-        "--directory",
-        default=".",
-        help="Output directory to save the unobfuscated pages.",
-    )
-    parser.add_argument(
-        "--combine",
-        action="store_true",
-        help="Combine left and right pages into one image.",
-    )
-
-    args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
-    viz = VizMangaFetch()
-    if viz.save_chapter(args.chapter_id, args.directory, args.combine):
-        print(f"Successfully retrieved chapter {args.chapter_id}")
-    else:
-        print(f"Failed to retrieve chapter {args.chapter_id}")
