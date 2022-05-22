@@ -12,8 +12,7 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command")
 
     fetch_chapter = subparsers.add_parser(
-        "fetch",
-        help="Fetches and deobfuscates an entire manga chapter for reading."
+        "fetch", help="Fetches and deobfuscates an entire manga chapter for reading."
     )
     fetch_chapter.add_argument(
         "chapter_id", type=int, help="Chapter id obtained from the Viz site."
